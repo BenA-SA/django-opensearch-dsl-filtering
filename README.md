@@ -28,7 +28,7 @@ class BookDocument(Document):
     # Your document definition here
     class Index:
         name = "books"
-        
+
     class Django:
         model = Book
         fields = ["id"]
@@ -36,7 +36,7 @@ class BookDocument(Document):
 # Create a FilterSet for your document
 class BookDocumentFilterSet(DocumentFilterSet):
     document = BookDocument
-    
+
     # Define filters
     title = CharFilter(field_name="title", lookup_expr="match", label="Title")
     author = CharFilter(field_name="author", lookup_expr="match", label="Author")
@@ -44,7 +44,7 @@ class BookDocumentFilterSet(DocumentFilterSet):
     price = NumericFilter(field_name="price", label="Price")
     price_min = NumericFilter(field_name="price", lookup_expr="gte", label="Min Price")
     price_max = NumericFilter(field_name="price", lookup_expr="lte", label="Max Price")
-    
+
     # Define sorting options
     SORT_CHOICES = [
         ("", "Default"),
@@ -63,14 +63,14 @@ from django.shortcuts import render
 def book_search(request):
     # Create a filter set with the request data
     filter_set = BookDocumentFilterSet(data=request.GET)
-    
+
     # Get the search results
     search = filter_set.search()
     results = search.execute()
-    
+
     # Get the form for rendering in the template
     form = filter_set.get_form()
-    
+
     return render(
         request,
         "books/search.html",

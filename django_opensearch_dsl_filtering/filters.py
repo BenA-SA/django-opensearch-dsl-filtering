@@ -5,8 +5,7 @@ This module provides a filtering system for Opensearch documents similar to
 django-filter, but designed to work with Opensearch queries instead of Django ORM.
 """
 
-from abc import ABC
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 

@@ -5,7 +5,15 @@ This package provides a filtering system for Opensearch documents similar to
 django-filter, but designed to work with Opensearch queries instead of Django ORM.
 """
 
-from .filters import BaseFilter, BooleanFilter, CharFilter, DateFilter, DocumentFilterSet, FilterSet, NumericFilter
+from .filters import (
+    BaseFilter,
+    BooleanFilter,
+    CharFilter,
+    DateFilter,
+    DocumentFilterSet,
+    FilterSet,
+    NumericFilter,
+)
 
 __all__ = [
     "BaseFilter",
