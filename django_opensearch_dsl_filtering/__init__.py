@@ -13,6 +13,7 @@ from .filters import (
     DocumentFilterSet,
     FilterSet,
     NumericFilter,
+    RangeFilter,
 )
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "DocumentFilterSet",
     "FilterSet",
     "NumericFilter",
+    "RangeFilter",
 ]
