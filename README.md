@@ -13,7 +13,7 @@ pip install django-opensearch-dsl-filtering
 - Filter Opensearch documents using a familiar Django-like API
 - Generate Django forms for your filters automatically
 - Support for pagination and sorting
-- Various filter types: CharFilter, NumericFilter, DateFilter, BooleanFilter
+- Various filter types: CharFilter, NumericFilter, RangeFilter, DateFilter, BooleanFilter
 
 ## Quick Start
 
@@ -104,6 +104,7 @@ def book_search(request):
 
 - `CharFilter`: For text fields
 - `NumericFilter`: For numeric fields
+- `RangeFilter`: For numeric fields with a range
 - `DateFilter`: For date fields
 - `BooleanFilter`: For boolean fields
 
