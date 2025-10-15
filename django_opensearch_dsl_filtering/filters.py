@@ -42,12 +42,12 @@ class BaseFilter(ABC):
         """
 
     @abstractmethod
-    def get_form_field(self) -> forms.Field:
+    def get_form_field(self) -> forms.Field | dict[str, forms.Field]:
         """
         Get the form field for this filter.
 
         Returns:
-            A Django form field
+            A Django form field or a dictionary of form fields
         """
 
 
