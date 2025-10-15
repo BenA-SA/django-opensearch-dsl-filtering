@@ -369,7 +369,7 @@ class FilterSet:
         filters = {}
         for name, obj in cls.__dict__.items():
             if isinstance(obj, BaseFilter):
-                filters[name] = obj
+                filters[name] = obj  # noqa: PERF403
         return filters
 
     def filter(self, search: Search) -> Search:
@@ -383,7 +383,34 @@ class FilterSet:
             The filtered search object
         """
         for name, filter_obj in self.filters.items():
-            if name in self.data and self.data[name] not in (None, ""):
+            if isinstance(filter_obj, RangeFilter):
+                # Handle RangeFilter which has multiple form fields
+                min_field = f"{name}_min_value"
+                max_field = f"{name}_max_value"
+
+                # Check if either min or max value is provided
+                if (
+                    min_field in self.data and self.data[min_field] not in (None, "")
+                ) or (
+                    max_field in self.data and self.data[max_field] not in (None, "")
+                ):
+                    # Create a dictionary with min and max values
+                    range_values = {}
+                    if min_field in self.data and self.data[min_field] not in (
+                        None,
+                        "",
+                    ):
+                        range_values["min_value"] = self.data[min_field]
+                    if max_field in self.data and self.data[max_field] not in (
+                        None,
+                        "",
+                    ):
+                        range_values["max_value"] = self.data[max_field]
+
+                    # Apply the filter
+                    search = filter_obj.filter(search, range_values)
+            elif name in self.data and self.data[name] not in (None, ""):
+                # Handle standard filters
                 search = filter_obj.filter(search, self.data[name])
 
         # Apply sorting if specified
@@ -451,7 +478,7 @@ class DocumentFilterSet(FilterSet):
         # Apply pagination
         search = search[start:end]
 
-        return search
+        return search  # noqa: RET504
 
     def get_form_class(self):
         """
@@ -464,7 +491,13 @@ class DocumentFilterSet(FilterSet):
 
         # Add filter fields
         for name, filter_obj in self.filters.items():
-            form_fields[name] = filter_obj.get_form_field()
+            form_field = filter_obj.get_form_field()
+            if isinstance(form_field, dict):
+                # Handle RangeFilter which returns a dictionary of form fields
+                for field_suffix, field in form_field.items():
+                    form_fields[f"{name}_{field_suffix}"] = field
+            else:
+                form_fields[name] = form_field
 
         # Add sorting field
         form_fields["sort"] = forms.ChoiceField(
