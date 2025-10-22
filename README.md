@@ -21,7 +21,7 @@ pip install django-opensearch-dsl-filtering
 
 ```python
 from django_opensearch_dsl import Document
-from django_opensearch_dsl_filtering import CharFilter, DateFilter, DocumentFilterSet, NumericFilter
+from django_opensearch_dsl_filtering import CharFilter, DateFilter, DocumentFilterSet, NumericFilter, PointFilter
 
 # Assuming you have a Document class defined
 class BookDocument(Document):
@@ -44,6 +44,7 @@ class BookDocumentFilterSet(DocumentFilterSet):
     price = NumericFilter(field_name="price", label="Price")
     price_min = NumericFilter(field_name="price", lookup_expr="gte", label="Min Price")
     price_max = NumericFilter(field_name="price", lookup_expr="lte", label="Max Price")
+    location = PointFilter(field_name="location", label="Location")
 
     # Define sorting options
     SORT_CHOICES = [
@@ -107,6 +108,7 @@ def book_search(request):
 - `RangeFilter`: For numeric fields with a range
 - `DateFilter`: For date fields
 - `BooleanFilter`: For boolean fields
+- `PointFilter`: For geo point fields with postcode and distance filtering
 
 ## Customizing Filters
 
@@ -115,6 +117,36 @@ Each filter can be customized with the following parameters:
 - `field_name`: The name of the field to filter on
 - `lookup_expr`: The lookup expression to use (e.g., "match", "term", "wildcard", "gt", "lt", etc.)
 - `label`: The label to use for the form field
+
+### PointFilter
+
+The `PointFilter` is specifically designed for geo point fields and provides location-based filtering using UK postcodes:
+
+```python
+from django_opensearch_dsl_filtering import PointFilter
+
+class StoreDocumentFilterSet(DocumentFilterSet):
+    document = StoreDocument
+    
+    # Filter stores by proximity to a postcode
+    location = PointFilter(
+        field_name="location",  # The geo_point field in your document
+        label="Find Stores Near You",
+        postcode_label="Postcode",
+        distance_label="Distance (miles)"
+    )
+```
+
+**How it works:**
+1. Users enter a UK postcode (e.g., "SW1A 1AA") and a distance in miles
+2. The filter calls the postcodes.io API to get latitude/longitude coordinates
+3. An OpenSearch `geo_distance` query filters results within the specified radius
+4. The distance is automatically converted from miles to kilometers for OpenSearch
+
+**Requirements:**
+- Your OpenSearch document must have a `geo_point` field
+- Internet access to reach the postcodes.io API
+- The `requests` library (automatically installed with this package)
 
 ## License
 

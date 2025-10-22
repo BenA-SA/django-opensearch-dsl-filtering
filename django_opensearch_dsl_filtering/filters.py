@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any
 
+import requests
 from django import forms
 from django_opensearch_dsl import Document
 from django_opensearch_dsl.search import Search
@@ -345,6 +346,105 @@ class RangeFilter(BaseFilter):
         return search
 
 
+class PointFilter(BaseFilter):
+    """Filter for geo point fields with postcode and distance inputs."""
+
+    def __init__(
+        self,
+        field_name: str,
+        label: str | None = None,
+        postcode_label: str | None = None,
+        distance_label: str | None = None,
+    ):
+        """
+        Initialize the filter.
+
+        Args:
+            field_name: The name of the geo point field to filter on
+            label: The label to use for the form field (defaults to field_name)
+            postcode_label: The label for the postcode field (defaults to "Postcode")
+            distance_label: The label for the distance field (defaults to "Distance (miles)")
+        """
+        super().__init__(field_name, label)
+        self.postcode_label = postcode_label or "Postcode"
+        self.distance_label = distance_label or "Distance (miles)"
+
+    def get_form_field(self) -> dict[str, forms.Field]:
+        """
+        Get the form fields for this filter.
+
+        Returns:
+            A dictionary with postcode and distance form fields
+        """
+        return {
+            "postcode": forms.CharField(
+                label=self.postcode_label,
+                required=False,
+                widget=forms.TextInput(
+                    attrs={"class": "form-control", "placeholder": "e.g. SW1A 1AA"},
+                ),
+            ),
+            "distance": forms.FloatField(
+                label=self.distance_label,
+                required=False,
+                widget=forms.NumberInput(
+                    attrs={"class": "form-control", "step": "0.1", "min": "0"},
+                ),
+            ),
+        }
+
+    def filter(self, search: Search, value: dict[str, Any]) -> Search:
+        """
+        Apply the filter to the search.
+
+        Args:
+            search: The search object to filter
+            value: A dictionary with postcode and distance
+
+        Returns:
+            The filtered search object
+        """
+        if not value or not value.get("postcode") or value.get("distance") is None:
+            return search
+
+        postcode = value["postcode"]
+        distance = value["distance"]
+
+        # Remove spaces from postcode for API call
+        postcode_normalized = postcode.replace(" ", "")
+
+        try:
+            # Call postcodes.io API to get lat/long
+            response = requests.get(
+                f"https://api.postcodes.io/postcodes/{postcode_normalized}",
+                timeout=5,
+            )
+            response.raise_for_status()
+            data = response.json()
+
+            if data.get("status") == 200 and data.get("result"):
+                result = data["result"]
+                latitude = result.get("latitude")
+                longitude = result.get("longitude")
+
+                if latitude is not None and longitude is not None:
+                    # Convert miles to kilometers (OpenSearch uses metric)
+                    distance_km = distance * 1.60934
+
+                    # Apply geo_distance query
+                    return search.query(
+                        "geo_distance",
+                        distance=f"{distance_km}km",
+                        **{self.field_name: {"lat": latitude, "lon": longitude}},
+                    )
+        except (requests.RequestException, ValueError, KeyError):
+            # If the API call fails or the postcode is invalid, return the search unchanged
+            # This allows the form to still work even if the API is down
+            pass
+
+        return search
+
+
 class FilterSet:
     """Base class for filter sets."""
 
@@ -409,6 +509,38 @@ class FilterSet:
 
                     # Apply the filter
                     search = filter_obj.filter(search, range_values)
+            elif isinstance(filter_obj, PointFilter):
+                # Handle PointFilter which has multiple form fields
+                postcode_field = f"{name}_postcode"
+                distance_field = f"{name}_distance"
+
+                # Check if either postcode or distance is provided
+                if (
+                    postcode_field in self.data
+                    and self.data[postcode_field] not in (None, "")
+                ) or (
+                    distance_field in self.data
+                    and self.data[distance_field] not in (None, "")
+                ):
+                    # Create a dictionary with postcode and distance values
+                    point_values = {}
+                    if postcode_field in self.data and self.data[
+                        postcode_field
+                    ] not in (
+                        None,
+                        "",
+                    ):
+                        point_values["postcode"] = self.data[postcode_field]
+                    if distance_field in self.data and self.data[
+                        distance_field
+                    ] not in (
+                        None,
+                        "",
+                    ):
+                        point_values["distance"] = self.data[distance_field]
+
+                    # Apply the filter
+                    search = filter_obj.filter(search, point_values)
             elif name in self.data and self.data[name] not in (None, ""):
                 # Handle standard filters
                 search = filter_obj.filter(search, self.data[name])
