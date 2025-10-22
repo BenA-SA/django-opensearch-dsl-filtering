@@ -21,7 +21,7 @@ pip install django-opensearch-dsl-filtering
 
 ```python
 from django_opensearch_dsl import Document
-from django_opensearch_dsl_filtering import CharFilter, DateFilter, DocumentFilterSet, NumericFilter
+from django_opensearch_dsl_filtering import CharFilter, DateFilter, DocumentFilterSet, NumericFilter, PointFilter
 
 # Assuming you have a Document class defined
 class BookDocument(Document):
@@ -44,6 +44,7 @@ class BookDocumentFilterSet(DocumentFilterSet):
     price = NumericFilter(field_name="price", label="Price")
     price_min = NumericFilter(field_name="price", lookup_expr="gte", label="Min Price")
     price_max = NumericFilter(field_name="price", lookup_expr="lte", label="Max Price")
+    location = PointFilter(field_name="location", label="Location")
 
     # Define sorting options
     SORT_CHOICES = [
@@ -107,6 +108,7 @@ def book_search(request):
 - `RangeFilter`: For numeric fields with a range
 - `DateFilter`: For date fields
 - `BooleanFilter`: For boolean fields
+- `PointFilter`: For geo point fields with postcode and distance filtering
 
 ## Customizing Filters
 
