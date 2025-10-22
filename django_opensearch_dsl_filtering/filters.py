@@ -463,7 +463,7 @@ class DocumentFilterSet(FilterSet):
         # Apply pagination if specified
         page = self.data.get("page", 1)
 
-        if page and not page.isdigit():
+        if page and not isinstance(page, int):
             try:
                 page = int(page)
             except ValueError:
@@ -474,7 +474,7 @@ class DocumentFilterSet(FilterSet):
 
         page_size = self.data.get("page_size", self.DEFAULT_PAGE_SIZE)
 
-        if page_size and not page_size.isdigit():
+        if page_size and not isinstance(page_size, int):
             try:
                 page_size = int(page_size)
             except ValueError:
