@@ -485,6 +485,19 @@ class DocumentFilterSet(FilterSet):
         elif page_size > self.MAX_PAGE_SIZE:
             page_size = self.MAX_PAGE_SIZE
 
+        # Get total count to calculate max page
+        total_count = search.count()
+
+        # Calculate max page number
+        if total_count > 0:
+            max_page = (total_count + page_size - 1) // page_size  # Ceiling division
+            # Cap page to max_page if it exceeds
+            if page > max_page:
+                page = max_page
+        else:
+            # No results, stay on page 1
+            page = 1
+
         # Calculate start and end indices for pagination
         start = (page - 1) * page_size
         end = start + page_size
