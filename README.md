@@ -116,6 +116,29 @@ Each filter can be customized with the following parameters:
 - `lookup_expr`: The lookup expression to use (e.g., "match", "term", "wildcard", "gt", "lt", etc.)
 - `label`: The label to use for the form field
 
+## Development and Testing
+
+This project includes a comprehensive testing infrastructure with Docker Compose and pytest.
+
+### Running Tests
+
+```bash
+# Using Docker Compose (recommended)
+docker compose up --build
+
+# Or run tests locally
+pip install -r requirements/test.txt
+pytest
+
+# Run only unit tests
+pytest -m unit
+
+# Run only integration tests (requires OpenSearch)
+pytest -m integration
+```
+
+For detailed testing documentation, see [TESTING.md](TESTING.md).
+
 ## License
 
 MIT
