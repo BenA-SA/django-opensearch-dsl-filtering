@@ -1,6 +1,7 @@
 """
 Book models for testing.
 """
+
 from django.db import models
 
 

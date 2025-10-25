@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures.
 """
+
 import os
 import time
 
@@ -67,13 +68,22 @@ def opensearch_client():
 @pytest.fixture(scope="session")
 def opensearch_indices(opensearch_client, django_db_setup):
     """Set up OpenSearch indices for testing."""
+    # Delete index if it exists using client directly
+    try:
+        opensearch_client.indices.delete(index="books", ignore=[404])
+    except Exception:
+        pass
+
     # Create indices
     call_command("opensearch", "index", "create", "--force")
 
     yield
 
     # Clean up indices after tests
-    call_command("opensearch", "index", "delete", "--force")
+    try:
+        opensearch_client.indices.delete(index="books", ignore=[404])
+    except Exception:
+        pass
 
 
 @pytest.fixture

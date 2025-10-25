@@ -1,6 +1,7 @@
 """
 Unit tests for filters without requiring OpenSearch.
 """
+
 import pytest
 from django import forms
 

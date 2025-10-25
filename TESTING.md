@@ -32,16 +32,16 @@ The easiest way to run tests is using Docker Compose, which handles all dependen
 
 ```bash
 # Build and run tests
-docker-compose up --build
+docker compose up --build
 
 # Run tests in detached mode
-docker-compose up -d
+docker compose up -d
 
 # View logs
-docker-compose logs -f django
+docker compose logs -f django
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
 ### Running Tests Locally

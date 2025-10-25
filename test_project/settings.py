@@ -1,6 +1,7 @@
 """
 Django settings for test project.
 """
+
 import os
 
 # Build paths inside the project

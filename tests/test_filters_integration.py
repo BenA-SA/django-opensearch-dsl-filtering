@@ -1,8 +1,9 @@
 """
 Integration tests for filters with OpenSearch.
 """
+
 import time
-from datetime import date, timedelta
+from datetime import date
 
 import pytest
 
@@ -100,10 +101,12 @@ def sample_books(db, opensearch_clean):
         ),
     ]
 
-    # Index the books in OpenSearch
+    # Index the books in OpenSearch using the registry
+    from django_opensearch_dsl.registries import registry
+
     for book in books:
-        doc = BookDocument()
-        doc.update(book)
+        registry.update(book)
+        registry.update(book, action="index")
 
     # Wait for indexing to complete
     time.sleep(2)
@@ -254,9 +257,7 @@ class TestDateFilterIntegration:
 
     def test_exact_date_filter(self, sample_books):
         """Test DateFilter with exact date."""
-        filter_set = BookDocumentFilterSet(
-            data={"publication_date": "2022-01-01"}
-        )
+        filter_set = BookDocumentFilterSet(data={"publication_date": "2022-01-01"})
         search = filter_set.search()
         results = search.execute()
 

@@ -1,6 +1,7 @@
 """
 OpenSearch documents for Book model.
 """
+
 from django_opensearch_dsl import Document, fields
 from django_opensearch_dsl.registries import registry
 
