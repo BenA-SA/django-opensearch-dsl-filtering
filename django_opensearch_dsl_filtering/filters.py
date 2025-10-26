@@ -425,11 +425,14 @@ class FilterSet:
         Apply sorting to the search, handling nested fields if configured.
 
         Args:
-            search: The search object to sort
-            sort_field: The field to sort by (can be prefixed with '-' for descending)
+            search (Search): The search object to sort
+            sort_field (str): The field to sort by (can be prefixed with '-' for descending)
 
         Returns:
-            The sorted search object
+            Search: The sorted search object
+
+        Raises:
+            ValueError: If nested_path is not configured for a nested field
         """
         # Determine sort order
         if sort_field.startswith("-"):
@@ -443,6 +446,14 @@ class FilterSet:
         nested_config = getattr(self, "NESTED_SORT_FIELDS", {}).get(field_name)
 
         if nested_config:
+            # Validate required nested_path field
+            if "nested_path" not in nested_config:
+                error_message = (
+                    f"nested_path is required in NESTED_SORT_FIELDS "
+                    f"configuration for field '{field_name}'"
+                )
+                raise ValueError(error_message)
+
             # Build nested sort configuration
             actual_field = nested_config.get("field", field_name)
             nested_path = nested_config["nested_path"]

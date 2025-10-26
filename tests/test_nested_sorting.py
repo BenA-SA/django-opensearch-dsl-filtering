@@ -1,7 +1,7 @@
 """Tests for nested field sorting functionality."""
 
 import unittest
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock
 
 from django_opensearch_dsl_filtering.filters import DocumentFilterSet
 
@@ -33,7 +33,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             ]
 
         filterset = SimpleFilterSet(data={"sort": "title"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was called with the field name
         self.mock_search.sort.assert_called_with("title")
@@ -50,7 +50,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             ]
 
         filterset = SimpleFilterSet(data={"sort": "-title"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was called with the negative field name
         self.mock_search.sort.assert_called_with("-title")
@@ -74,7 +74,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             }
 
         filterset = NestedFilterSet(data={"sort": "number_of_employees"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was called with nested configuration
         expected_sort = {
@@ -105,7 +105,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             }
 
         filterset = NestedFilterSet(data={"sort": "-number_of_employees"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was called with nested configuration in descending order
         expected_sort = {
@@ -131,7 +131,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             }
 
         filterset = NestedFilterSet(data={"sort": "employee_count"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was called with min mode
         expected_sort = {
@@ -157,7 +157,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             }
 
         filterset = NestedFilterSet(data={"sort": "salary"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was called with default avg mode
         expected_sort = {
@@ -176,7 +176,7 @@ class TestNestedFieldSorting(unittest.TestCase):
             document = self.mock_document
 
         filterset = SimpleFilterSet(data={})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
 
         # Verify sort was not called
         self.mock_search.sort.assert_not_called()
@@ -203,7 +203,7 @@ class TestNestedFieldSorting(unittest.TestCase):
 
         # Test simple field
         filterset = MixedFilterSet(data={"sort": "title"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
         self.mock_search.sort.assert_called_with("title")
 
         # Reset mock
@@ -211,7 +211,7 @@ class TestNestedFieldSorting(unittest.TestCase):
 
         # Test nested field
         filterset = MixedFilterSet(data={"sort": "employee_count"})
-        search = filterset.search()
+        search = filterset.search()  # noqa: F841
         expected_sort = {
             "departments.employee_count": {
                 "order": "asc",
@@ -220,6 +220,27 @@ class TestNestedFieldSorting(unittest.TestCase):
             }
         }
         self.mock_search.sort.assert_called_with(expected_sort)
+
+    def test_nested_field_missing_nested_path_raises_error(self):
+        """Test that missing nested_path raises a ValueError."""
+
+        class InvalidNestedFilterSet(DocumentFilterSet):
+            document = self.mock_document
+            NESTED_SORT_FIELDS = {
+                "employee_count": {
+                    "field": "departments.employee_count",
+                    # Missing nested_path - should raise error
+                }
+            }
+
+        filterset = InvalidNestedFilterSet(data={"sort": "employee_count"})
+
+        # Should raise ValueError when trying to search
+        with self.assertRaises(ValueError) as context:
+            filterset.search()
+
+        self.assertIn("nested_path is required", str(context.exception))
+        self.assertIn("employee_count", str(context.exception))
 
 
 if __name__ == "__main__":
