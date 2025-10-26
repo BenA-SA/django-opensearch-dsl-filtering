@@ -116,6 +116,69 @@ Each filter can be customized with the following parameters:
 - `lookup_expr`: The lookup expression to use (e.g., "match", "term", "wildcard", "gt", "lt", etc.)
 - `label`: The label to use for the form field
 
+## Sorting on Nested Fields
+
+When working with nested fields in Opensearch, you may need to configure special sorting behavior. The `DocumentFilterSet` class supports nested field sorting through the `NESTED_SORT_FIELDS` attribute.
+
+### Example with Nested Fields
+
+```python
+from django_opensearch_dsl import Document, fields
+from django_opensearch_dsl_filtering import DocumentFilterSet, RangeFilter
+
+class CompanyDocument(Document):
+    company_name = fields.TextField(
+        fields={"raw_search_field": fields.KeywordField()},
+    )
+    company_number = fields.TextField()
+    primary_accounts = fields.NestedField(
+        properties={
+            "Date": fields.DateField(),
+            "Number_of_Employees": fields.IntegerField(),
+        }
+    )
+
+class CompanyFilterSet(DocumentFilterSet):
+    document = CompanyDocument
+
+    # Filters
+    number_of_employees = RangeFilter(
+        field_name="primary_accounts__Number_of_Employees",
+        label="Number of Employees"
+    )
+
+    # Define sorting options
+    SORT_CHOICES = [
+        ("", "Default"),
+        ("company_name", "Company Name (A-Z)"),
+        ("-company_name", "Company Name (Z-A)"),
+        ("number_of_employees", "Employees (Low to High)"),
+        ("-number_of_employees", "Employees (High to Low)"),
+    ]
+
+    # Configure nested field sorting
+    NESTED_SORT_FIELDS = {
+        "number_of_employees": {
+            "field": "primary_accounts.Number_of_Employees",
+            "nested_path": "primary_accounts",
+            "mode": "max",  # Options: max, min, avg, sum, median
+        }
+    }
+```
+
+### Nested Sort Field Configuration
+
+The `NESTED_SORT_FIELDS` dictionary accepts the following parameters for each field:
+
+- `field`: The actual Opensearch field path (required)
+- `nested_path`: The path to the nested object (required)
+- `mode`: How to aggregate multiple values (optional, default: "avg")
+  - `max`: Use the maximum value
+  - `min`: Use the minimum value
+  - `avg`: Use the average value
+  - `sum`: Use the sum of all values
+  - `median`: Use the median value
+
 ## License
 
 MIT

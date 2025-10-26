@@ -416,9 +416,49 @@ class FilterSet:
         # Apply sorting if specified
         if self.data.get("sort"):
             sort_field = self.data["sort"]
-            search = search.sort(sort_field)
+            search = self._apply_sorting(search, sort_field)
 
         return search
+
+    def _apply_sorting(self, search: Search, sort_field: str) -> Search:
+        """
+        Apply sorting to the search, handling nested fields if configured.
+
+        Args:
+            search: The search object to sort
+            sort_field: The field to sort by (can be prefixed with '-' for descending)
+
+        Returns:
+            The sorted search object
+        """
+        # Determine sort order
+        if sort_field.startswith("-"):
+            order = "desc"
+            field_name = sort_field[1:]
+        else:
+            order = "asc"
+            field_name = sort_field
+
+        # Check if this is a nested field that requires special handling
+        nested_config = getattr(self, "NESTED_SORT_FIELDS", {}).get(field_name)
+
+        if nested_config:
+            # Build nested sort configuration
+            actual_field = nested_config.get("field", field_name)
+            nested_path = nested_config["nested_path"]
+            mode = nested_config.get("mode", "avg")
+
+            sort_config = {
+                actual_field: {
+                    "order": order,
+                    "mode": mode,
+                    "nested": {"path": nested_path},
+                }
+            }
+            return search.sort(sort_config)
+
+        # Standard sorting
+        return search.sort(sort_field)
 
 
 class DocumentFilterSet(FilterSet):
@@ -430,6 +470,17 @@ class DocumentFilterSet(FilterSet):
     SORT_CHOICES = [
         ("", "Default"),
     ]
+
+    # Nested field sorting configuration
+    # Override this in subclasses to define nested field sorting
+    # Format: {
+    #     "sort_field_name": {
+    #         "field": "actual.field.path",
+    #         "nested_path": "parent.nested.path",
+    #         "mode": "max" | "min" | "avg" | "sum" | "median"
+    #     }
+    # }
+    NESTED_SORT_FIELDS = {}
 
     # Pagination defaults
     DEFAULT_PAGE_SIZE = 10
